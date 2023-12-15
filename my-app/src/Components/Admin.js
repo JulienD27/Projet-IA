@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import Modal from 'react-modal';
 import {Button, Card, CardContent, TextField, Select, MenuItem, FormControl, InputLabel, Grid} from "@mui/material";
 import customStyles from "./customStyles";
+import '../css/global.css';
 
 const AdminInterface = () => {
     const path = "http://localhost/my-app/projet_ia/";
@@ -14,24 +15,16 @@ const AdminInterface = () => {
     const [students, setStudents] = useState([]);
     const [formattedStudentInfo, setFormattedStudentInfo] = useState({});
 
-    const formatStudentInfo = (contactLogs) => {
-        const formattedInfo = {};
+    const formatContactLogs = (logs, studentInfo) => {
+        const formattedLogs = logs.map((log) => ({
+            company_name: log.company_name,
+            total_interviews: log.total_interviews,
+        }));
 
-        contactLogs.forEach((log) => {
-            const studentId = log.student_id;
-            const companyId = log.company_id;
-            const interviewsCount = log.interviews_count;
-
-            if (!formattedInfo[studentId]) {
-                formattedInfo[studentId] = {};
-            }
-
-            if (!formattedInfo[studentId][companyId]) {
-                formattedInfo[studentId][companyId] = interviewsCount;
-            }
-        });
-
-        return formattedInfo;
+        return {
+            logs: formattedLogs,
+            info: studentInfo,
+        };
     };
 
     const addStudent = () => {
@@ -106,30 +99,32 @@ const AdminInterface = () => {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({studentId: userId, action: 2}),
-        }
-        fetch(path + 'manage_student_info.php', requestOption).then(response => response.json()).then(data => {
-            console.log(data)
-            if (data.status === "success") {
-                console.log('Récupération des infos réussie')
-                const formattedInfo = formatStudentInfo(data.contactlogs);
-                setFormattedStudentInfo(formattedInfo);
-            } else
-                console.log('Erreur de récupération des infos')
-        })
+        };
+        fetch(path + 'manage_student_info.php', requestOption)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                if (data.status === "success") {
+                    console.log('Récupération des infos réussie');
+                    const formattedData = formatContactLogs(data.contactlogs, data.studentInfo);
+                    updateStudentInfo(userId, formattedData); // Mettre à jour avec les informations reçues
+                } else {
+                    console.log('Erreur de récupération des infos');
+                }
+            })
             .catch(error => {
-                console.log('Erreur de récupération des infos' + error)
+                console.log('Erreur de récupération des infos' + error);
             });
-    }
+    };
 
-    const updateStudentInfo = (userId, info) => {
-        const updatedStudents = students.map((student) => {
-            if (student.student_id === userId) {
-                return { ...student, additionalInfo: info };
-            }
-            return student;
-        });
-        setStudents(updatedStudents);
-    }
+
+    const updateStudentInfo = (userId, data) => {
+        setFormattedStudentInfo(prevState => ({
+            ...prevState,
+            [userId]: data,
+        }));
+    };
+
 
     const openModal = () => {
         setModalIsOpen(true);
@@ -151,11 +146,11 @@ const AdminInterface = () => {
                     <Button onClick={openModal}
                             variant="contained"
                             color="primary"
-                            style={{margin: '10px'}}>Ajouter un utilisateur</Button>
+                            style={{margin: '10px'}}>Ajouter un étudiant</Button>
                     <Button onClick={getAllStudents}
                             variant="contained"
                             color="primary"
-                            style={{margin: '10px'}}>Récupérer les utilisateurs</Button>
+                            style={{margin: '10px'}}>Récupérer les étudiant</Button>
                 </div>
                 <div style={{
                     display: 'flex',
@@ -177,36 +172,58 @@ const AdminInterface = () => {
                         <tbody>
                         {students.map((student) => (
                             <tr key={student.student_id}>
-                                <td style={{padding: '10px', border: '1px solid #ccc'}}>{student.student_id}</td>
-                                <td style={{padding: '10px', border: '1px solid #ccc'}}>{student.student_name}</td>
-                                <td style={{padding: '10px', border: '1px solid #ccc'}}>
+                                <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>{student.student_id}</td>
+                                <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>{student.student_name}</td>
+                                <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>
                                     <Button
                                         onClick={() => removeStudent(student.student_id)}
                                         variant="contained"
                                         color="primary"
                                         style={{margin: '5px', width: '119px', height: '50px'}}
                                     >
-                                        Supprimer
+                                        Supprimer de la liste
                                     </Button>
                                     <Button
-                                        onClick={() => getStudentInfo(student.student_id)}
+                                        onClick={() => alert('y a rien à accéder...')}
                                         variant="contained"
                                         color="primary"
                                         style={{margin: '5px', width: '119px', height: '50px'}}
                                     >
-                                        Obtenir les infos
+                                     Gérer l'accès
                                     </Button>
                                 </td>
-                                <td style={{padding: '10px', border: '1px solid #ccc'}}>
-                                    {formattedStudentInfo[student.student_id] ?
-                                        Object.entries(formattedStudentInfo[student.student_id]).map(([companyId, contactCount]) => (
-                                            <p key={companyId}>
-                                                L'étudiant {student.student_id} a contacté
-                                                l'entreprise {companyId} {contactCount} fois et a
-                                                obtenu {contactCount} interviews.
-                                            </p>
-                                        ))
-                                        : 'Pas d\'infos supplémentaires'} {/* Affichage des nouvelles infos */}
+                                <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>
+                                    {
+                                        formattedStudentInfo[student.student_id] ? (
+                                            <div>
+                                                {formattedStudentInfo[student.student_id].info.map((info, index) => (
+                                                    <p>
+                                                        Année d'étude : {info.year_of_study}
+                                                        {info.year_of_study === "3" && <>, Note de
+                                                            stage: {info.stage_mark}</>}
+                                                    </p>
+                                                ))}
+                                                {formattedStudentInfo[student.student_id].logs.length > 0 ? (
+                                                    formattedStudentInfo[student.student_id].logs.map((log, index) => (
+                                                        <p key={index}>
+                                                            {`Cet étudiant a contacté ${log.company_name} ${log.total_interviews} fois et a obtenu ${log.total_interviews} interviews.`}
+                                                        </p>
+                                                    ))
+                                                ) : (
+                                                    <p>Cet étudiant n'a pas encore contacté d'entreprise</p>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                onClick={() => getStudentInfo(student.student_id)}
+                                                variant="contained"
+                                                color="primary"
+                                                style={{margin: '5px', width: '119px', height: '50px'}}
+                                            >
+                                                Obtenir les infos
+                                            </Button>
+                                        )
+                                    }
                                 </td>
                             </tr>
                         ))}
