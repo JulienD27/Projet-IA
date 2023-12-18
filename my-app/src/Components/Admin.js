@@ -3,17 +3,20 @@ import Modal from 'react-modal';
 import {Button, Card, CardContent, TextField, Select, MenuItem, FormControl, InputLabel, Grid} from "@mui/material";
 import customStyles from "./customStyles";
 import '../css/global.css';
+import {useNavigate} from "react-router-dom";
 
-const AdminInterface = () => {
+const AdminInterface = (setUser, user, isConnected) => {
     const path = "http://localhost/my-app/projet_ia/";
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [studentName, setStudentName] = useState('');
     const [studentEmail, setStudentEmail] = useState('');
+    const [studentPassword, setStudentPassword] = useState('');
     const [studentYearOfStudy, setStudentYearOfStudy] = useState('');
     const [studentStageMark, setStudentStageMark] = useState('');
     const [studentInfo, setStudentInfo] = useState({});
     const [students, setStudents] = useState([]);
     const [formattedStudentInfo, setFormattedStudentInfo] = useState({});
+    const navigate = useNavigate();
 
     const formatContactLogs = (logs, studentInfo) => {
         const formattedLogs = logs.map((log) => ({
@@ -36,6 +39,7 @@ const AdminInterface = () => {
                 email: studentEmail,
                 year_of_study: studentYearOfStudy,
                 stage_mark: studentStageMark,
+                password: studentPassword,
                 action: 1
             }),
         }
@@ -135,8 +139,11 @@ const AdminInterface = () => {
     };
 
     useEffect(() => {
+        /*if (!user.studentId == null || !isConnected)
+            navigate('/');*/
         getAllStudents()
     }, []);
+
 
     return (
         <Grid container spacing={2}>
@@ -196,13 +203,15 @@ const AdminInterface = () => {
                                     {
                                         formattedStudentInfo[student.student_id] ? (
                                             <div>
+                                                <h3>Bulletin de l'étudiant :</h3>
                                                 {formattedStudentInfo[student.student_id].info.map((info, index) => (
                                                     <p>
                                                         Année d'étude : {info.year_of_study}
-                                                        {info.year_of_study === "3" && <>, Note de
-                                                            stage: {info.stage_mark}</>}
+                                                        {info.year_of_study === "3" && <><p> Note de
+                                                            stage: {info.stage_mark}</p></>}
                                                     </p>
                                                 ))}
+                                                <h3>Contact avec les entreprises :</h3>
                                                 {formattedStudentInfo[student.student_id].logs.length > 0 ? (
                                                     formattedStudentInfo[student.student_id].logs.map((log, index) => (
                                                         <p key={index}>
@@ -262,13 +271,22 @@ const AdminInterface = () => {
                                 style={{marginBottom: '10px'}}
                             />
                             <TextField
+                                label="Student password"
+                                variant="outlined"
+                                value={studentPassword}
+                                onChange={(e) => setStudentPassword(e.target.value)}
+                                required
+                                type={'password'}
+                                fullWidth
+                                style={{marginBottom: '10px'}}
+                            />
+                            <TextField
                                 label="Student stage mark"
                                 variant="outlined"
                                 InputProps={{inputProps: {min: 0, max: 20}}}
                                 type={'number'}
                                 value={studentStageMark}
                                 onChange={(e) => setStudentStageMark(e.target.value)}
-                                required
                                 fullWidth
                                 style={{marginBottom: '10px'}}
                             />

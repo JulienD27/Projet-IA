@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import Modal from 'react-modal';
 import {Button, Card, CardContent, TextField, Grid} from "@mui/material";
 import customStyles from "./customStyles";
+import {useLocation, useNavigate} from "react-router-dom";
 
-const StudentInterface = () => {
+const StudentInterface = (setUser, user, isConnected) => {
     const [companyInfo, setCompanyInfo] = useState({
         companyName: '',
         interviews: '',
     });
     const path = "http://localhost/my-app/projet_ia/";
     const [modalIsOpen, setModalIsOpen] = useState(false);
+    const navigate = useNavigate();
+    const location = useLocation();
 
     // Fonction pour gérer la soumission des informations
     const addInfo = (event) => {
@@ -17,11 +20,11 @@ const StudentInterface = () => {
         var requestOptions = {
             method: 'POST',
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({studentId: 3, companyName: companyInfo.companyName, interviews: companyInfo.interviews , action: 1}),
+            body: JSON.stringify({studentId: location.state.user.studentId, companyName: companyInfo.companyName, interviews: companyInfo.interviews , action: 1}),
         }
         fetch(path + 'manage_student_info.php', requestOptions).then((response) => response.json()).then((data) => {
             console.log(data);
-            if (data.success === "success") {
+            if (data.status === "success") {
                 alert(data.message);
                 console.log("Company info added")
             } else
@@ -42,6 +45,12 @@ const StudentInterface = () => {
     const closeModal = () => {
         setModalIsOpen(false);
     };
+
+    useEffect(() => {
+        /*if (!isConnected) {
+            navigate('/');
+        }*/
+    }, []);
 
     return (
         <Grid container spacing={2}>

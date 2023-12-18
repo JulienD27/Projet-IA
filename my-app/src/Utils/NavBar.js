@@ -6,10 +6,30 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 
 
-function NavBar() {
+function NavBar({isConnected, setConnected, isAdmin, setIsAdmin}) {
     const navigate = useNavigate();
+    const path = "http://localhost/my-app/projet_ia/";
     const handleLogout = async (e) => {
         e.preventDefault();
+
+        var requestOption = {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+        }
+        fetch(path + 'logout.php', requestOption).then(response => {
+            console.log(response.status)
+            if (response.status === 200) {
+                alert('Déconnexion réussie')
+                navigate('/');
+                setConnected(false);
+                setIsAdmin(false);
+            } else
+                alert('Erreur de déconnexion')
+        })
+            .catch(error => {
+                alert('Erreur de déconnexion...')
+            });
+
     };
 
     return (
@@ -20,12 +40,28 @@ function NavBar() {
                 </Typography>
                 <div style={{flexGrow: 1}}></div>
 
-                <Button component={Link} to="/Student" color="inherit">
-                    Student
-                </Button>
-                <Button component={Link} to="/Admin" color="inherit">
-                    Admin
-                </Button>
+                {
+                    !isConnected ?
+                        <Button component={Link} to="/" color="inherit">
+                            Connexion
+                        </Button>
+                        :
+                        <Button component={Link} to="/" color="inherit" onClick={handleLogout}>
+                            Déconnexion
+                        </Button>
+                }
+                {
+                    isConnected && isAdmin ?
+                        <Button component={Link} to="/Admin" color="inherit">
+                            Admin
+                        </Button> :
+                        isConnected && !isAdmin ?
+                        <Button component={Link} to="/Student" color="inherit">
+                            Student
+                        </Button> :
+                        <></>
+                }
+
             </Toolbar>
         </AppBar>
     );
