@@ -154,10 +154,17 @@ const AdminInterface = (setUser, user, isConnected) => {
                             variant="contained"
                             color="primary"
                             style={{margin: '10px'}}>Ajouter un étudiant</Button>
-                    <Button onClick={getAllStudents}
-                            variant="contained"
-                            color="primary"
-                            style={{margin: '10px'}}>Récupérer les étudiant</Button>
+                    {
+                        students.length < 1 ? (
+                            <Button onClick={getAllStudents}
+                                    variant="contained"
+                                    color="primary"
+                                    style={{margin: '10px'}}>Récupérer les étudiant
+                            </Button>
+                        ) : (
+                            <></>
+                        )
+                    }
                 </div>
                 <div style={{
                     display: 'flex',

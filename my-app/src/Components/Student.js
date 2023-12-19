@@ -13,14 +13,34 @@ const StudentInterface = (setUser, user, isConnected) => {
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+    const [formattedStudentInfo, setFormattedStudentInfo] = useState({});
+    const [studentID, setStudentID] = useState('');
+    const [contactLogs, setContactLogs] = useState([]);
+    const [studentInfo, setStudentInfo] = useState({year_of_study: '', stage_mark: ''});
 
-    // Fonction pour gérer la soumission des informations
+    const formatContactLogs = (logs, studentInfo) => {
+        const formattedLogs = logs.map((log) => ({
+            company_name: log.company_name,
+            total_interviews: log.total_interviews,
+        }));
+
+        return {
+            logs: formattedLogs,
+            info: studentInfo,
+        };
+    };
+
     const addInfo = (event) => {
         event.preventDefault();
         var requestOptions = {
             method: 'POST',
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({studentId: location.state.user.studentId, companyName: companyInfo.companyName, interviews: companyInfo.interviews , action: 1}),
+            body: JSON.stringify({
+                studentId: studentID,
+                companyName: companyInfo.companyName,
+                interviews: companyInfo.interviews,
+                action: 1
+            }),
         }
         fetch(path + 'manage_student_info.php', requestOptions).then((response) => response.json()).then((data) => {
             console.log(data);
@@ -30,12 +50,48 @@ const StudentInterface = (setUser, user, isConnected) => {
             } else
                 console.log("Erreur lors de l'ajout des informations")
         }).catch((error) => {
-                console.log(error);
-            });
+            console.log(error);
+        });
         closeModal();
         console.log('Informations soumises : ', companyInfo);
         companyInfo.companyName = '';
         companyInfo.interviews = '';
+    };
+
+    const updateStudentInfo = (userId, data) => {
+        setFormattedStudentInfo(prevState => ({
+            ...prevState,
+            [userId]: data,
+        }));
+    };
+
+    const getStudentInfo = (userId) => {
+        var requestOption = {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({studentId: userId, action: 2}),
+        };
+        console.log('userId : ' + userId)
+        fetch(path + 'manage_student_info.php', requestOption)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    console.log(data);
+                    console.log(data.studentInfo)
+                    console.log('Récupération des infos réussie');
+                    setContactLogs(data.contactlogs || []);
+                    const studentInformation = data.studentInfo && data.studentInfo.length > 0 ? data.studentInfo[0] : {};
+                    setStudentInfo(studentInformation);
+                    console.log('studentInformation : ', studentInformation);
+                    //const formattedData = formatContactLogs(data.contactlogs, data.studentInfo);
+                    //updateStudentInfo(userId, formattedData); // Mettre à jour avec les informations reçues
+                } else {
+                    console.log('Erreur de récupération des infos');
+                }
+            })
+            .catch(error => {
+                console.log('Erreur de récupération des infos ' + error);
+            });
     };
 
     const openModal = () => {
@@ -46,10 +102,33 @@ const StudentInterface = (setUser, user, isConnected) => {
         setModalIsOpen(false);
     };
 
+
+
     useEffect(() => {
         /*if (!isConnected) {
             navigate('/');
         }*/
+        if (localStorage.getItem('user') !== null) {
+            console.log('id from local storage : ' + JSON.parse(localStorage.getItem('user')).studentId)
+            setStudentID(JSON.parse(localStorage.getItem('user')).studentId);
+        }
+        else if (location.state.user.studentId !== null && location.state.user.studentId !== "undefined") {
+            console.log('id from location state : ' + location.state.user.studentId)
+            setStudentID(location.state.user.studentId);
+        }
+
+        console.log('loggedInUser from Student page : ' + localStorage.getItem('user'));
+        if (localStorage.getItem('user') === null || localStorage.getItem('user') === "undefined") {
+            navigate('/');
+        }
+        else {
+            //const loggedInUser = JSON.parse(localStorage.getItem("user"));
+            //console.log('loggedInUser username : ' + loggedInUser.username);
+            //setStudentID(loggedInUser.studentId);
+            //console.log('sans parse :' + loggedInUser.username)
+        }
+        //console.log('from student interface')
+        //console.log('data received : ', location.state.user);
     }, []);
 
     return (
@@ -62,11 +141,53 @@ const StudentInterface = (setUser, user, isConnected) => {
                     flexDirection: 'column',
                     padding: '10px'
                 }}>
-                    <h2>Interface Étudiant</h2>
+                    <h1>Interface Étudiant</h1>
                     <Button onClick={openModal}
                             variant="contained"
                             color="primary"
                             style={{margin: '10px'}}>Ajouter des informations</Button>
+                    <h2>Mes informations :</h2>
+
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        flexDirection: 'column'
+                    }}>
+                        {contactLogs.length === 0 && (
+                            <Button
+                                onClick={() => getStudentInfo(studentID)}
+                                variant="contained"
+                                color="primary"
+                                style={{margin: '5px', width: '119px', height: '50px'}}
+                            >
+                                Obtenir mes infos
+                            </Button>
+                        )}
+
+                        {/* Affichage des informations une fois les données récupérées */}
+                        {studentInfo.year_of_study && (
+
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                flexDirection: 'column'
+                            }}>
+                                <h2>Année d'étude : {studentInfo.year_of_study}</h2>
+                                <h2>Note de stage : {studentInfo.stage_mark}</h2>
+                                    <h2>Historique des contacts avec les entreprises</h2>
+                                    {contactLogs.map((log, index) => (
+                                        <div key={index}>
+                                            <p>Vous avez contacté {log.company_name} {log.total_interviews} fois et
+                                                avez
+                                                obtenu {log.total_interviews} interviews</p>
+                                        </div>
+                                    ))}
+                                <h2>Bulletin</h2>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </Grid>
             <Modal

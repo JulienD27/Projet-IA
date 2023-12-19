@@ -19,6 +19,8 @@ function NavBar({isConnected, setConnected, isAdmin, setIsAdmin}) {
         fetch(path + 'logout.php', requestOption).then(response => {
             console.log(response.status)
             if (response.status === 200) {
+                localStorage.clear();
+                console.log('loggedInUser après deconnexion : ' + localStorage.getItem('user'));
                 alert('Déconnexion réussie')
                 navigate('/');
                 setConnected(false);

@@ -17,24 +17,40 @@ function LoginForm({setIsAdmin, isAdmin, isConnected, setConnected, setUser, use
         setPassword(e.target.value);
     };
 
+    function setCookie(cname, cvalue, exdays) {
+        const d = new Date();
+        d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+        let expires = "expires="+d.toUTCString();
+        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    }
+
     const handleSubmit = async (e) => {
         console.log('tentative de connexion avec ' + login + ' et ' + password)
         e.preventDefault();
+        loginProcess()
+    }
+
+    const loginProcess = () => {
         var requestOption = {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({login: login, password: password}),
         }
+        console.log('request option : ' + requestOption.body)
         fetch(path + 'login.php', requestOption).then(response => response.json()).then(data => {
-            console.log(data);
+            //console.log('data : ' + data);
             if (data.status === "success") {
                 alert(data.message);
                 setConnected(true);
                 setUser({
                     username: data.username,
+                    password: password,
                     studentId: data.studentId,
                     userId: data.userId,
                 });
+                console.log('user après login : ' + user);
+                localStorage.setItem('user', JSON.stringify(user));
+                console.log('loggedInUser après login : ' + localStorage.getItem('user'));
                 if (data.studentId === null){
                     console.log('data.studentId === null')
                     setIsAdmin(true);
@@ -51,11 +67,13 @@ function LoginForm({setIsAdmin, isAdmin, isConnected, setConnected, setUser, use
     }
 
     useEffect(() => {
-        console.log('from login form')
+        /*console.log('from login form')
         console.log(user);
         console.log(isConnected)
-        console.log(isAdmin)
-    }, [user])
+        console.log(isAdmin)*/
+        const loggedInUser = localStorage.getItem("user");
+        console.log('loggedInUser from loginForm : ' + loggedInUser)
+    }, [])
 
     return (
         <div className="auth-form-container">
