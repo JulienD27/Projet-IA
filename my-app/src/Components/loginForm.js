@@ -40,19 +40,21 @@ function LoginForm({setIsAdmin, isAdmin, isConnected, setConnected, setUser, use
         fetch(path + 'login.php', requestOption).then(response => response.json()).then(data => {
             //console.log('data : ' + data);
             if (data.status === "success") {
+                localStorage.clear();
                 alert(data.message);
                 setConnected(true);
-                setUser({
-                    username: data.username,
-                    password: password,
-                    studentId: data.studentId,
-                    userId: data.userId,
-                });
-                console.log('user après login : ' + user);
+                user.userId = data.userId;
+                user.username = data.username;
+                user.password = password;
+                if (!data.studentId)
+                    user.studentId = null;
+                else
+                    user.studentId = data.studentId;
+                console.log('user après login : ' + user.username + ' ' + user.password + ' ' + user.studentId + ' ' + user.userId);
                 localStorage.setItem('user', JSON.stringify(user));
                 console.log('loggedInUser après login : ' + localStorage.getItem('user'));
                 if (data.studentId === null){
-                    console.log('data.studentId === null')
+                    //console.log('data.studentId === null')
                     setIsAdmin(true);
                     history('/Admin', {state: {user}});
                 }
@@ -73,6 +75,16 @@ function LoginForm({setIsAdmin, isAdmin, isConnected, setConnected, setUser, use
         console.log(isAdmin)*/
         const loggedInUser = localStorage.getItem("user");
         console.log('loggedInUser from loginForm : ' + loggedInUser)
+        /*if (loggedInUser){
+            setConnected(true);
+            console.log('loggedInUser studenID from loginForm : ' + JSON.parse(loggedInUser).studentId)
+            if (loggedInUser && !isNaN(JSON.parse(loggedInUser).studentId)) {
+                history('/Student');
+            }
+            else if (loggedInUser && isNaN(JSON.parse(loggedInUser).studentId)){
+                history('/Admin');
+            }
+        }*/
     }, [])
 
     return (

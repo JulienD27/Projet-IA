@@ -10,6 +10,7 @@ const StudentInterface = (setUser, user, isConnected) => {
         interviews: '',
     });
     const path = "http://localhost/my-app/projet_ia/";
+    const history = useNavigate();
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
@@ -103,25 +104,25 @@ const StudentInterface = (setUser, user, isConnected) => {
     };
 
 
-
     useEffect(() => {
         /*if (!isConnected) {
             navigate('/');
         }*/
-        if (localStorage.getItem('user') !== null) {
+        const loggedInUser = localStorage.getItem("user");
+        if (loggedInUser) {
             console.log('id from local storage : ' + JSON.parse(localStorage.getItem('user')).studentId)
             setStudentID(JSON.parse(localStorage.getItem('user')).studentId);
         }
-        else if (location.state.user.studentId !== null && location.state.user.studentId !== "undefined") {
+        /*else if (location.state.user.studentId !== null && location.state.user.studentId !== "undefined") {
             console.log('id from location state : ' + location.state.user.studentId)
             setStudentID(location.state.user.studentId);
-        }
+        }*/
 
         console.log('loggedInUser from Student page : ' + localStorage.getItem('user'));
         if (localStorage.getItem('user') === null || localStorage.getItem('user') === "undefined") {
             navigate('/');
-        }
-        else {
+        } else {
+
             //const loggedInUser = JSON.parse(localStorage.getItem("user"));
             //console.log('loggedInUser username : ' + loggedInUser.username);
             //setStudentID(loggedInUser.studentId);
@@ -142,6 +143,7 @@ const StudentInterface = (setUser, user, isConnected) => {
                     padding: '10px'
                 }}>
                     <h1>Interface Étudiant</h1>
+                    <h1>Bienvenue, {/*JSON.parse(localStorage.getItem("user")).username*/}</h1>
                     <Button onClick={openModal}
                             variant="contained"
                             color="primary"
@@ -176,14 +178,14 @@ const StudentInterface = (setUser, user, isConnected) => {
                             }}>
                                 <h2>Année d'étude : {studentInfo.year_of_study}</h2>
                                 <h2>Note de stage : {studentInfo.stage_mark}</h2>
-                                    <h2>Historique des contacts avec les entreprises</h2>
-                                    {contactLogs.map((log, index) => (
-                                        <div key={index}>
-                                            <p>Vous avez contacté {log.company_name} {log.total_interviews} fois et
-                                                avez
-                                                obtenu {log.total_interviews} interviews</p>
-                                        </div>
-                                    ))}
+                                <h2>Historique des contacts avec les entreprises</h2>
+                                {contactLogs.map((log, index) => (
+                                    <div key={index}>
+                                        <p>Vous avez contacté {log.company_name} {log.total_interviews} fois et
+                                            avez
+                                            obtenu {log.total_interviews} interviews</p>
+                                    </div>
+                                ))}
                                 <h2>Bulletin</h2>
                             </div>
                         )}

@@ -5,7 +5,7 @@ import customStyles from "./customStyles";
 import '../css/global.css';
 import {useNavigate} from "react-router-dom";
 
-const AdminInterface = (setUser, user, isConnected) => {
+const AdminInterface = (setUser, user, isConnected, isAdmin) => {
     const path = "http://localhost/my-app/projet_ia/";
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [studentName, setStudentName] = useState('');
@@ -142,6 +142,7 @@ const AdminInterface = (setUser, user, isConnected) => {
         /*if (!user.studentId == null || !isConnected)
             navigate('/');*/
         getAllStudents()
+
     }, []);
 
 

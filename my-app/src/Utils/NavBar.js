@@ -11,7 +11,7 @@ function NavBar({isConnected, setConnected, isAdmin, setIsAdmin}) {
     const path = "http://localhost/my-app/projet_ia/";
     const handleLogout = async (e) => {
         e.preventDefault();
-
+        localStorage.clear();
         var requestOption = {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
