@@ -133,7 +133,7 @@ const StudentInterface = (setUser, user, isConnected) => {
     }, []);
 
     return (
-        <Grid container spacing={2}>
+        <Grid container spacing={6}>
             <Grid item xs={12}>
                 <div style={{
                     display: 'flex',
@@ -143,7 +143,7 @@ const StudentInterface = (setUser, user, isConnected) => {
                     padding: '10px'
                 }}>
                     <h1>Interface Étudiant</h1>
-                    <h1>Bienvenue, {/*JSON.parse(localStorage.getItem("user")).username*/}</h1>
+                    <h1>Bienvenue, {JSON.parse(localStorage.getItem("user")).username}</h1>
                     <Button onClick={openModal}
                             variant="contained"
                             color="primary"

@@ -1,6 +1,16 @@
 import React, {useEffect, useState} from 'react';
 import Modal from 'react-modal';
-import {Button, Card, CardContent, TextField, Select, MenuItem, FormControl, InputLabel, Grid} from "@mui/material";
+import {
+    Button,
+    Card,
+    CardContent,
+    TextField,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
+    Grid,
+} from "@mui/material";
 import customStyles from "./customStyles";
 import '../css/global.css';
 import {useNavigate} from "react-router-dom";
@@ -8,8 +18,10 @@ import {useNavigate} from "react-router-dom";
 const AdminInterface = (setUser, user, isConnected, isAdmin) => {
     const path = "http://localhost/my-app/projet_ia/";
     const [modalIsOpen, setModalIsOpen] = useState(false);
+    const [modalIsOpen2, setModalIsOpen2] = useState(false);
     const [studentName, setStudentName] = useState('');
     const [studentEmail, setStudentEmail] = useState('');
+    const [studentId, setStudentId] = useState(0);
     const [studentPassword, setStudentPassword] = useState('');
     const [studentYearOfStudy, setStudentYearOfStudy] = useState('');
     const [studentStageMark, setStudentStageMark] = useState('');
@@ -17,6 +29,8 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
     const [students, setStudents] = useState([]);
     const [formattedStudentInfo, setFormattedStudentInfo] = useState({});
     const navigate = useNavigate();
+    const [bulletin, setBulletin] = useState([{UE1: ''}, {UE2: ''}, {UE3: ''}, {UE4: ''}, {UE5: ''}, {UE6: ''}]);
+    const [studentBulletins, setStudentBulletins] = useState({});
 
     const formatContactLogs = (logs, studentInfo) => {
         const formattedLogs = logs.map((log) => ({
@@ -29,6 +43,68 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
             info: studentInfo,
         };
     };
+
+    const fillBulletin = () => {
+        console.log('On remplit le bulletin avec l\'id : ', studentId)
+        console.log('Bulletin : ', bulletin)
+        var requestOption = {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                ue1: bulletin[0].UE1,
+                ue2: bulletin[1].UE2,
+                ue3: bulletin[2].UE3,
+                ue4: bulletin[3].UE4,
+                ue5: bulletin[4].UE5,
+                ue6: bulletin[5].UE6,
+                studentId: studentId,
+                action: 5
+            }),
+        }
+        console.log('request option : ' + requestOption.body)
+        fetch(path + 'manage_student.php', requestOption).then(response => response.json()).then(data => {
+            console.log(data)
+            if (data.status === "success") {
+                alert(data.message)
+                console.log('Ajoute des notes réussie')
+            } else
+                console.log('Erreur lors de l\'ajout des notes')
+        }).catch(error => {
+            console.log('Erreur lors de l\'ajout des notes' + error)
+        });
+        closeModal2();
+        getBulletin(studentId)
+    }
+
+
+    const getBulletin = (userId) => {
+        //console.log('On récupère le bulletin avec l\'id : ', userId)
+        var requestOption = {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                studentId: userId,
+                action: 6
+            }),
+        }
+        //console.log('request option : ' + requestOption.body)
+        fetch(path + 'manage_student.php', requestOption).then(response => response.json()).then(data => {
+            console.log(data)
+            if (data.status === "success") {
+                console.log('Récupération du bulletin réussie')
+                console.log('Bulletin : ', data.bulletin[0])
+                setStudentBulletins(prevState => ({
+                    ...prevState,
+                    [userId]: data.bulletin[0],
+                }));
+                console.log('Bulletin obtenu : ', studentBulletins[userId])
+                //console.log('Bulletins : ', studentBulletins)
+            } else
+                console.log('Erreur lors de la récupération du bulletin')
+        }).catch(error => {
+            console.log('Erreur lors de la récupération du bulletin' + error)
+        });
+    }
 
     const addStudent = () => {
         var requestOption = {
@@ -47,15 +123,17 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
             console.log(data)
             if (data.status === "success") {
                 console.log('Création réussie')
+                alert(data.message)
             } else
                 console.log('Erreur de Création')
         }).catch(error => {
-                console.log('Erreur de Création' + error)
-            });
+            console.log('Erreur de Création' + error)
+        });
         closeModal();
+        getAllStudents()
     };
 
-    const getAllStudents = () => {
+    const getAllStudents = async () => {
         var requestOption = {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -74,6 +152,10 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
             .catch(error => {
                 console.log('Erreur de récupération des étudiants' + error)
             });
+        students.forEach((student) => {
+            getStudentInfo(student.student_id);
+            getBulletin(student.student_id)
+        });
     }
 
     const removeStudent = (userId) => {
@@ -96,9 +178,11 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                 console.log('Erreur de suppression' + error)
             });
         console.log('Utilisateur supprimé avec l\'ID : ', userId);
+        getAllStudents()
     };
 
     const getStudentInfo = (userId) => {
+        getBulletin(userId)
         var requestOption = {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -121,6 +205,14 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
             });
     };
 
+    function getImageUrl() {
+        const randomIndex = Math.random();
+        const imageUrl1 = 'https://www.pngall.com/wp-content/uploads/5/Profile-Transparent.png';
+        const imageUrl2 = 'https://www.shareicon.net/data/512x512/2016/09/15/829452_user_512x512.png';
+
+        return randomIndex < 0.5 ? imageUrl1 : imageUrl2;
+    }
+
 
     const updateStudentInfo = (userId, data) => {
         setFormattedStudentInfo(prevState => ({
@@ -138,18 +230,37 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
         setModalIsOpen(false);
     };
 
+    const openModal2 = (studentId) => {
+        //console.log("On ouvre le bulletin avec l'id : ", studentId)
+        setModalIsOpen2(true);
+        setStudentId(studentId)
+    }
+
+    const closeModal2 = () => {
+        setModalIsOpen2(false);
+    }
+
     useEffect(() => {
         /*if (!user.studentId == null || !isConnected)
             navigate('/');*/
         getAllStudents()
-
+        students.forEach((student) => {
+            getStudentInfo(student.student_id);
+            getBulletin(student.student_id)
+        });
     }, []);
 
 
     return (
         <Grid container spacing={2}>
             <Grid item xs={12}>
-                <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', padding: '10px'}}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    flexDirection: 'column',
+                    padding: '10px'
+                }}>
                     <h2>Interface Administrateur</h2>
                     <Button onClick={openModal}
                             variant="contained"
@@ -179,6 +290,7 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                         <thead>
                         <tr>
                             <th style={{padding: '10px', border: '1px solid #ccc'}}>ID</th>
+                            <th style={{padding: '10px', border: '1px solid #ccc'}}>Photo</th>
                             <th style={{padding: '10px', border: '1px solid #ccc'}}>Nom</th>
                             <th style={{padding: '10px', border: '1px solid #ccc'}}>Actions</th>
                             <th style={{padding: '10px', border: '1px solid #ccc'}}>Informations supplémentaires</th>
@@ -187,8 +299,23 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                         <tbody>
                         {students.map((student) => (
                             <tr key={student.student_id}>
-                                <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>{student.student_id}</td>
-                                <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>{student.student_name}</td>
+                                <td style={{
+                                    padding: '10px',
+                                    border: '1px solid #ccc',
+                                    textAlign: 'center'
+                                }}>{student.student_id}</td>
+                                <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>
+                                    <img
+                                        src={getImageUrl()}
+                                        alt="Image de profil"
+                                        style={{width: '200px', height: '200px'}}
+                                    />
+                                </td>
+                                <td style={{
+                                    padding: '10px',
+                                    border: '1px solid #ccc',
+                                    textAlign: 'center'
+                                }}>{student.student_name}</td>
                                 <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>
                                     <Button
                                         onClick={() => removeStudent(student.student_id)}
@@ -204,21 +331,59 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                                         color="primary"
                                         style={{margin: '5px', width: '119px', height: '50px'}}
                                     >
-                                     Gérer l'accès
+                                        Gérer l'accès
+                                    </Button>
+                                    <Button
+                                        onClick={() => openModal2(student.student_id)}
+                                        variant="contained"
+                                        color="primary"
+                                        style={{margin: '5px', width: '119px', height: '50px'}}
+                                    >
+                                        Remplir les notes
                                     </Button>
                                 </td>
                                 <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>
                                     {
                                         formattedStudentInfo[student.student_id] ? (
                                             <div>
-                                                <h3>Bulletin de l'étudiant :</h3>
+                                                <h3>Informations de l'étudiant :</h3>
                                                 {formattedStudentInfo[student.student_id].info.map((info, index) => (
                                                     <p>
                                                         Année d'étude : {info.year_of_study}
-                                                        {info.year_of_study === "3" && <><p> Note de
-                                                            stage: {info.stage_mark}</p></>}
+                                                        {/*info.year_of_study === "3" && <><p> Note de
+                                                            stage: {info.stage_mark}</p></>*/}
                                                     </p>
                                                 ))}
+                                                <h3>Notes de l'étudiant :</h3>
+                                                {formattedStudentInfo[student.student_id].info.map((info, index) => (
+                                                    <>
+                                                        {info.year_of_study === "3" &&
+                                                            <p> Note de stage: {info.stage_mark}</p>}
+                                                    </>
+                                                ))}
+                                                {studentBulletins[student.student_id] ? (
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'center',
+                                                        alignItems: 'center',
+                                                        flexDirection: 'column'
+                                                    }}>
+                                                        <p>Unité d'Enseignement 1
+                                                            : {studentBulletins[student.student_id].UE1_Realiser}</p>
+                                                        <p>Unité d'Enseignement 2
+                                                            : {studentBulletins[student.student_id].UE2_Optimiser}</p>
+                                                        <p>Unité d'Enseignement 3
+                                                            : {studentBulletins[student.student_id].UE3_Administrer}</p>
+                                                        <p>Unité d'Enseignement 4
+                                                            : {studentBulletins[student.student_id].UE4_Gerer}</p>
+                                                        <p>Unité d'Enseignement 5
+                                                            : {studentBulletins[student.student_id].UE5_Conduire}</p>
+                                                        <p>Unité d'Enseignement 6
+                                                            : {studentBulletins[student.student_id].UE6_Collaborer}</p>
+                                                    </div>
+                                                ) : (
+                                                    <p>Cet étudiant n'a pas encore de notes</p>
+                                                )}
                                                 <h3>Contact avec les entreprises :</h3>
                                                 {formattedStudentInfo[student.student_id].logs.length > 0 ? (
                                                     formattedStudentInfo[student.student_id].logs.map((log, index) => (
@@ -255,6 +420,7 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                 onRequestClose={closeModal}
                 contentLabel="Modal"
                 style={customStyles}
+                ariaHideApp={false}
             >
                 <h2 style={{marginBottom: '20px'}}>Entrez les informations du répertoire</h2>
                 <Card className="directory-card">
@@ -321,6 +487,165 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                                         style={{marginRight: '20px', width: '100%', height: '50px'}}>Ajouter
                                     l'étudiant</Button>
                                 <Button type="button" variant="contained" color="secondary" onClick={closeModal}
+                                        style={{marginLeft: '20px', width: '100%', height: '50px'}}>Annuler</Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            </Modal>
+            <Modal
+                isOpen={modalIsOpen2}
+                onRequestClose={closeModal2}
+                contentLabel="Modal"
+                style={customStyles}
+                ariaHideApp={false}
+            >
+                <h2 style={{marginBottom: '20px'}}>Remplir le bulletin</h2>
+                <Card className="directory-card">
+                    <CardContent>
+                        <form onSubmit={fillBulletin}>
+                            <TextField
+                                label="UE1"
+                                variant="outlined"
+                                InputProps={{
+                                    inputProps: {
+                                        min: 0,
+                                        max: 20,
+                                        step: "any", // Permet les chiffres flottants
+                                        pattern: "[0-9]+([.,][0-9]+)?" // Expression régulière pour les chiffres flottants
+                                    },
+                                    inputMode: "numeric" // Indique que le mode de saisie est numérique
+                                }}
+                                value={bulletin[0].UE1} // Accéder à la valeur UE1 dans le premier objet du tableau bulletin
+                                onChange={(e) => {
+                                    const updatedBulletin = [...bulletin]; // Créer une copie de l'état bulletin
+                                    updatedBulletin[0].UE1 = e.target.value; // Mettre à jour la valeur de UE1 dans la copie
+                                    setBulletin(updatedBulletin); // Mettre à jour l'état bulletin avec la copie modifiée
+                                }}
+                                required
+                                fullWidth
+                                style={{marginBottom: '10px'}}
+                            />
+                            <TextField
+                                label="UE2"
+                                variant="outlined"
+                                InputProps={{
+                                    inputProps: {
+                                        min: 0,
+                                        max: 20,
+                                        step: "any", // Permet les chiffres flottants
+                                        pattern: "[0-9]+([.,][0-9]+)?" // Expression régulière pour les chiffres flottants
+                                    },
+                                    inputMode: "numeric" // Indique que le mode de saisie est numérique
+                                }}
+                                value={bulletin[1].UE2} // Accéder à la valeur UE1 dans le premier objet du tableau bulletin
+                                onChange={(e) => {
+                                    const updatedBulletin = [...bulletin]; // Créer une copie de l'état bulletin
+                                    updatedBulletin[1].UE2 = e.target.value; // Mettre à jour la valeur de UE1 dans la copie
+                                    setBulletin(updatedBulletin); // Mettre à jour l'état bulletin avec la copie modifiée
+                                }}
+                                required
+                                fullWidth
+                                style={{marginBottom: '10px'}}
+                            />
+                            <TextField
+                                label="UE3"
+                                variant="outlined"
+                                InputProps={{
+                                    inputProps: {
+                                        min: 0,
+                                        max: 20,
+                                        step: "any", // Permet les chiffres flottants
+                                        pattern: "[0-9]+([.,][0-9]+)?" // Expression régulière pour les chiffres flottants
+                                    },
+                                    inputMode: "numeric" // Indique que le mode de saisie est numérique
+                                }}
+                                value={bulletin[2].UE3} // Accéder à la valeur UE1 dans le premier objet du tableau bulletin
+                                onChange={(e) => {
+                                    const updatedBulletin = [...bulletin]; // Créer une copie de l'état bulletin
+                                    updatedBulletin[2].UE3 = e.target.value; // Mettre à jour la valeur de UE1 dans la copie
+                                    setBulletin(updatedBulletin); // Mettre à jour l'état bulletin avec la copie modifiée
+                                }}
+                                required
+                                fullWidth
+                                style={{marginBottom: '10px'}}
+                            />
+                            <TextField
+                                label="UE4"
+                                variant="outlined"
+                                InputProps={{
+                                    inputProps: {
+                                        min: 0,
+                                        max: 20,
+                                        step: "any", // Permet les chiffres flottants
+                                        pattern: "[0-9]+([.,][0-9]+)?" // Expression régulière pour les chiffres flottants
+                                    },
+                                    inputMode: "numeric" // Indique que le mode de saisie est numérique
+                                }}
+                                value={bulletin[3].UE4} // Accéder à la valeur UE1 dans le premier objet du tableau bulletin
+                                onChange={(e) => {
+                                    const updatedBulletin = [...bulletin]; // Créer une copie de l'état bulletin
+                                    updatedBulletin[3].UE4 = e.target.value; // Mettre à jour la valeur de UE1 dans la copie
+                                    setBulletin(updatedBulletin); // Mettre à jour l'état bulletin avec la copie modifiée
+                                }}
+                                required
+                                fullWidth
+                                style={{marginBottom: '10px'}}
+                            />
+                            <TextField
+                                label="UE5"
+                                variant="outlined"
+                                InputProps={{
+                                    inputProps: {
+                                        min: 0,
+                                        max: 20,
+                                        step: "any", // Permet les chiffres flottants
+                                        pattern: "[0-9]+([.,][0-9]+)?" // Expression régulière pour les chiffres flottants
+                                    },
+                                    inputMode: "numeric" // Indique que le mode de saisie est numérique
+                                }}
+                                value={bulletin[4].UE5} // Accéder à la valeur UE1 dans le premier objet du tableau bulletin
+                                onChange={(e) => {
+                                    const updatedBulletin = [...bulletin]; // Créer une copie de l'état bulletin
+                                    updatedBulletin[4].UE5 = e.target.value; // Mettre à jour la valeur de UE1 dans la copie
+                                    setBulletin(updatedBulletin); // Mettre à jour l'état bulletin avec la copie modifiée
+                                }}
+                                required
+                                fullWidth
+                                style={{marginBottom: '10px'}}
+                            />
+                            <TextField
+                                label="UE6"
+                                variant="outlined"
+                                InputProps={{
+                                    inputProps: {
+                                        min: 0,
+                                        max: 20,
+                                        step: "any", // Permet les chiffres flottants
+                                        pattern: "[0-9]+([.,][0-9]+)?" // Expression régulière pour les chiffres flottants
+                                    },
+                                    inputMode: "numeric" // Indique que le mode de saisie est numérique
+                                }}
+                                value={bulletin[5].UE6} // Accéder à la valeur UE1 dans le premier objet du tableau bulletin
+                                onChange={(e) => {
+                                    const updatedBulletin = [...bulletin]; // Créer une copie de l'état bulletin
+                                    updatedBulletin[5].UE6 = e.target.value; // Mettre à jour la valeur de UE1 dans la copie
+                                    setBulletin(updatedBulletin); // Mettre à jour l'état bulletin avec la copie modifiée
+                                }}
+                                required
+                                fullWidth
+                                style={{marginBottom: '10px'}}
+                            />
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                flexDirection: 'row'
+                            }}>
+                                <Button type="submit" variant="contained" color="primary"
+                                        style={{marginRight: '20px', width: '100%', height: '50px'}}>Ajouter
+                                    les notes</Button>
+                                <Button type="button" variant="contained" color="secondary" onClick={closeModal2}
                                         style={{marginLeft: '20px', width: '100%', height: '50px'}}>Annuler</Button>
                             </div>
                         </form>
