@@ -13,11 +13,11 @@ const StudentInterface = (setUser, user, isConnected) => {
     const history = useNavigate();
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const navigate = useNavigate();
-    const location = useLocation();
     const [formattedStudentInfo, setFormattedStudentInfo] = useState({});
     const [studentID, setStudentID] = useState('');
     const [contactLogs, setContactLogs] = useState([]);
     const [studentInfo, setStudentInfo] = useState({year_of_study: '', stage_mark: ''});
+    const [bulletin, setBulletin] = useState({});
 
     const formatContactLogs = (logs, studentInfo) => {
         const formattedLogs = logs.map((log) => ({
@@ -57,6 +57,7 @@ const StudentInterface = (setUser, user, isConnected) => {
         console.log('Informations soumises : ', companyInfo);
         companyInfo.companyName = '';
         companyInfo.interviews = '';
+        getStudentInfo(studentID);
     };
 
     const updateStudentInfo = (userId, data) => {
@@ -77,6 +78,7 @@ const StudentInterface = (setUser, user, isConnected) => {
             .then(response => response.json())
             .then(data => {
                 if (data.status === "success") {
+                    getBulletin(userId)
                     console.log(data);
                     console.log(data.studentInfo)
                     console.log('Récupération des infos réussie');
@@ -94,6 +96,30 @@ const StudentInterface = (setUser, user, isConnected) => {
                 console.log('Erreur de récupération des infos ' + error);
             });
     };
+
+    const getBulletin = (userId) => {
+        var requestOption = {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                studentId: userId,
+                action: 6
+            }),
+        }
+        //console.log('request option : ' + requestOption.body)
+        fetch(path + 'manage_student.php', requestOption).then(response => response.json()).then(data => {
+            console.log(data)
+            if (data.status === "success") {
+                console.log('Récupération du bulletin réussie')
+                console.log('Bulletin : ', data.bulletin[0])
+                setBulletin(data.bulletin[0]);
+                console.log('Bulletin : ', bulletin)
+            } else
+                console.log('Erreur lors de la récupération du bulletin')
+        }).catch(error => {
+            console.log('Erreur lors de la récupération du bulletin' + error)
+        });
+    }
 
     const openModal = () => {
         setModalIsOpen(true);
@@ -144,6 +170,11 @@ const StudentInterface = (setUser, user, isConnected) => {
                 }}>
                     <h1>Interface Étudiant</h1>
                     <h1>Bienvenue, {JSON.parse(localStorage.getItem("user")).username}</h1>
+                    <img
+                        src="https://www.pngall.com/wp-content/uploads/5/Profile-Transparent.png"
+                        alt="Image de profil"
+                        style={{width: '200px', height: '200px'}}
+                    />
                     <Button onClick={openModal}
                             variant="contained"
                             color="primary"
@@ -177,7 +208,6 @@ const StudentInterface = (setUser, user, isConnected) => {
                                 flexDirection: 'column'
                             }}>
                                 <h2>Année d'étude : {studentInfo.year_of_study}</h2>
-                                <h2>Note de stage : {studentInfo.stage_mark}</h2>
                                 <h2>Historique des contacts avec les entreprises</h2>
                                 {contactLogs.map((log, index) => (
                                     <div key={index}>
@@ -187,6 +217,53 @@ const StudentInterface = (setUser, user, isConnected) => {
                                     </div>
                                 ))}
                                 <h2>Bulletin</h2>
+                                <table style={{borderCollapse: 'collapse',
+                                border: '1px solid black',
+                                width: '60%',
+                                textAlign: 'center',
+                                display: 'block'
+                                }}>
+                                    <thead>
+                                    <tr>
+                                        <th>Unité d'Enseignement</th>
+                                        <th>Intitulé</th>
+                                        <th>Note</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td>UE1</td>
+                                        <td>Réaliser</td>
+                                        <td>{bulletin.UE1_Realiser}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>UE2</td>
+                                        <td>Optimiser</td>
+                                        <td>{bulletin.UE2_Optimiser}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>UE3</td>
+                                        <td>Administrer</td>
+                                        <td>{bulletin.UE3_Administrer}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>UE4</td>
+                                        <td>Gérer</td>
+                                        <td>{bulletin.UE4_Gerer}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>UE5</td>
+                                        <td>Conduire</td>
+                                        <td>{bulletin.UE5_Conduire}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>UE6</td>
+                                        <td>Collaborer</td>
+                                        <td>{bulletin.UE6_Collaborer}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                                <p>Note de stage : {studentInfo.stage_mark}</p>
                             </div>
                         )}
                     </div>

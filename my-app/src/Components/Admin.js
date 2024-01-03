@@ -67,13 +67,13 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
             if (data.status === "success") {
                 alert(data.message)
                 console.log('Ajoute des notes réussie')
+                getBulletin(studentId)
             } else
                 console.log('Erreur lors de l\'ajout des notes')
         }).catch(error => {
             console.log('Erreur lors de l\'ajout des notes' + error)
         });
         closeModal2();
-        getBulletin(studentId)
     }
 
 
@@ -205,14 +205,6 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
             });
     };
 
-    function getImageUrl() {
-        const randomIndex = Math.random();
-        const imageUrl1 = 'https://www.pngall.com/wp-content/uploads/5/Profile-Transparent.png';
-        const imageUrl2 = 'https://www.shareicon.net/data/512x512/2016/09/15/829452_user_512x512.png';
-
-        return randomIndex < 0.5 ? imageUrl1 : imageUrl2;
-    }
-
 
     const updateStudentInfo = (userId, data) => {
         setFormattedStudentInfo(prevState => ({
@@ -303,10 +295,10 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                                     padding: '10px',
                                     border: '1px solid #ccc',
                                     textAlign: 'center'
-                                }}>{student.student_id}</td>
+                                }}><b>{student.student_id}</b></td>
                                 <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>
                                     <img
-                                        src={getImageUrl()}
+                                        src="https://www.pngall.com/wp-content/uploads/5/Profile-Transparent.png"
                                         alt="Image de profil"
                                         style={{width: '200px', height: '200px'}}
                                     />
@@ -315,7 +307,7 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                                     padding: '10px',
                                     border: '1px solid #ccc',
                                     textAlign: 'center'
-                                }}>{student.student_name}</td>
+                                }}><b>{student.student_name}</b></td>
                                 <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>
                                     <Button
                                         onClick={() => removeStudent(student.student_id)}
@@ -368,22 +360,54 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                                                         alignItems: 'center',
                                                         flexDirection: 'column'
                                                     }}>
-                                                        <p>Unité d'Enseignement 1
-                                                            : {studentBulletins[student.student_id].UE1_Realiser}</p>
-                                                        <p>Unité d'Enseignement 2
-                                                            : {studentBulletins[student.student_id].UE2_Optimiser}</p>
-                                                        <p>Unité d'Enseignement 3
-                                                            : {studentBulletins[student.student_id].UE3_Administrer}</p>
-                                                        <p>Unité d'Enseignement 4
-                                                            : {studentBulletins[student.student_id].UE4_Gerer}</p>
-                                                        <p>Unité d'Enseignement 5
-                                                            : {studentBulletins[student.student_id].UE5_Conduire}</p>
-                                                        <p>Unité d'Enseignement 6
-                                                            : {studentBulletins[student.student_id].UE6_Collaborer}</p>
+                                                        <table style={{borderCollapse: 'collapse',
+                                                            border: '1px solid black',
+                                                            textAlign: 'center',
+                                                            display: 'block'}}>
+                                                            <thead>
+                                                            <tr>
+                                                                <th>Unité d'Enseignement</th>
+                                                                <th>Intitulé</th>
+                                                                <th>Note</th>
+                                                            </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                            <tr>
+                                                                <td>UE1</td>
+                                                                <td>Realiser</td>
+                                                                <td>{studentBulletins[student.student_id].UE1_Realiser}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>UE2</td>
+                                                                <td>Optimiser</td>
+                                                                <td>{studentBulletins[student.student_id].UE2_Optimiser}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>UE3</td>
+                                                                <td>Administrer</td>
+                                                                <td>{studentBulletins[student.student_id].UE3_Administrer}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>UE4</td>
+                                                                <td>Gerer</td>
+                                                                <td>{studentBulletins[student.student_id].UE4_Gerer}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>UE5</td>
+                                                                <td>Conduire</td>
+                                                                <td>{studentBulletins[student.student_id].UE5_Conduire}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>UE6</td>
+                                                                <td>Collaborer</td>
+                                                                <td>{studentBulletins[student.student_id].UE6_Collaborer}</td>
+                                                            </tr>
+                                                            </tbody>
+                                                        </table>
                                                     </div>
-                                                ) : (
+                                                    ) : (
                                                     <p>Cet étudiant n'a pas encore de notes</p>
-                                                )}
+                                                    )}
                                                 <h3>Contact avec les entreprises :</h3>
                                                 {formattedStudentInfo[student.student_id].logs.length > 0 ? (
                                                     formattedStudentInfo[student.student_id].logs.map((log, index) => (
