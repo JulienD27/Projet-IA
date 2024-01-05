@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import Modal from 'react-modal';
 import {Button, Card, CardContent, TextField, Grid} from "@mui/material";
 import customStyles from "./customStyles";
-import {useLocation, useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 
 const StudentInterface = (setUser, user, isConnected) => {
     const [companyInfo, setCompanyInfo] = useState({
@@ -10,26 +10,12 @@ const StudentInterface = (setUser, user, isConnected) => {
         interviews: '',
     });
     const path = "http://localhost/my-app/projet_ia/";
-    const history = useNavigate();
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const navigate = useNavigate();
-    const [formattedStudentInfo, setFormattedStudentInfo] = useState({});
     const [studentID, setStudentID] = useState('');
     const [contactLogs, setContactLogs] = useState([]);
     const [studentInfo, setStudentInfo] = useState({year_of_study: '', stage_mark: ''});
     const [bulletin, setBulletin] = useState({});
-
-    const formatContactLogs = (logs, studentInfo) => {
-        const formattedLogs = logs.map((log) => ({
-            company_name: log.company_name,
-            total_interviews: log.total_interviews,
-        }));
-
-        return {
-            logs: formattedLogs,
-            info: studentInfo,
-        };
-    };
 
     const addInfo = (event) => {
         event.preventDefault();
@@ -48,6 +34,7 @@ const StudentInterface = (setUser, user, isConnected) => {
             if (data.status === "success") {
                 alert(data.message);
                 console.log("Company info added")
+                getStudentInfo(studentID);
             } else
                 console.log("Erreur lors de l'ajout des informations")
         }).catch((error) => {
@@ -57,14 +44,6 @@ const StudentInterface = (setUser, user, isConnected) => {
         console.log('Informations soumises : ', companyInfo);
         companyInfo.companyName = '';
         companyInfo.interviews = '';
-        getStudentInfo(studentID);
-    };
-
-    const updateStudentInfo = (userId, data) => {
-        setFormattedStudentInfo(prevState => ({
-            ...prevState,
-            [userId]: data,
-        }));
     };
 
     const getStudentInfo = (userId) => {
@@ -131,31 +110,16 @@ const StudentInterface = (setUser, user, isConnected) => {
 
 
     useEffect(() => {
-        /*if (!isConnected) {
-            navigate('/');
-        }*/
         const loggedInUser = localStorage.getItem("user");
         if (loggedInUser) {
             console.log('id from local storage : ' + JSON.parse(localStorage.getItem('user')).studentId)
             setStudentID(JSON.parse(localStorage.getItem('user')).studentId);
         }
-        /*else if (location.state.user.studentId !== null && location.state.user.studentId !== "undefined") {
-            console.log('id from location state : ' + location.state.user.studentId)
-            setStudentID(location.state.user.studentId);
-        }*/
 
         console.log('loggedInUser from Student page : ' + localStorage.getItem('user'));
         if (localStorage.getItem('user') === null || localStorage.getItem('user') === "undefined") {
             navigate('/');
-        } else {
-
-            //const loggedInUser = JSON.parse(localStorage.getItem("user"));
-            //console.log('loggedInUser username : ' + loggedInUser.username);
-            //setStudentID(loggedInUser.studentId);
-            //console.log('sans parse :' + loggedInUser.username)
         }
-        //console.log('from student interface')
-        //console.log('data received : ', location.state.user);
     }, []);
 
     return (
@@ -172,7 +136,7 @@ const StudentInterface = (setUser, user, isConnected) => {
                     <h1>Bienvenue, {JSON.parse(localStorage.getItem("user")).username}</h1>
                     <img
                         src="https://www.pngall.com/wp-content/uploads/5/Profile-Transparent.png"
-                        alt="Image de profil"
+                        alt="Profil"
                         style={{width: '200px', height: '200px'}}
                     />
                     <Button onClick={openModal}
@@ -197,7 +161,6 @@ const StudentInterface = (setUser, user, isConnected) => {
                                 Obtenir mes infos
                             </Button>
                         )}
-
                         {/* Affichage des informations une fois les données récupérées */}
                         {studentInfo.year_of_study && (
 

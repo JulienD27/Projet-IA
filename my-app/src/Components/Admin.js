@@ -1,19 +1,9 @@
 import React, {useEffect, useState} from 'react';
 import Modal from 'react-modal';
-import {
-    Button,
-    Card,
-    CardContent,
-    TextField,
-    Select,
-    MenuItem,
-    FormControl,
-    InputLabel,
-    Grid,
-} from "@mui/material";
+import { Button, Card, CardContent, TextField, Select, MenuItem, FormControl, InputLabel, Grid } from "@mui/material";
 import customStyles from "./customStyles";
 import '../css/global.css';
-import {useNavigate} from "react-router-dom";
+import * as tf from '@tensorflow/tfjs';
 
 const AdminInterface = (setUser, user, isConnected, isAdmin) => {
     const path = "http://localhost/my-app/projet_ia/";
@@ -25,19 +15,17 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
     const [studentPassword, setStudentPassword] = useState('');
     const [studentYearOfStudy, setStudentYearOfStudy] = useState('');
     const [studentStageMark, setStudentStageMark] = useState('');
-    const [studentInfo, setStudentInfo] = useState({});
     const [students, setStudents] = useState([]);
     const [formattedStudentInfo, setFormattedStudentInfo] = useState({});
-    const navigate = useNavigate();
     const [bulletin, setBulletin] = useState([{UE1: ''}, {UE2: ''}, {UE3: ''}, {UE4: ''}, {UE5: ''}, {UE6: ''}]);
     const [studentBulletins, setStudentBulletins] = useState({});
+    const [probaStages, setProbaStages] = useState({});
 
     const formatContactLogs = (logs, studentInfo) => {
         const formattedLogs = logs.map((log) => ({
             company_name: log.company_name,
             total_interviews: log.total_interviews,
         }));
-
         return {
             logs: formattedLogs,
             info: studentInfo,
@@ -76,7 +64,6 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
         closeModal2();
     }
 
-
     const getBulletin = (userId) => {
         //console.log('On récupère le bulletin avec l\'id : ', userId)
         var requestOption = {
@@ -89,15 +76,15 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
         }
         //console.log('request option : ' + requestOption.body)
         fetch(path + 'manage_student.php', requestOption).then(response => response.json()).then(data => {
-            console.log(data)
+            //console.log(data)
             if (data.status === "success") {
-                console.log('Récupération du bulletin réussie')
-                console.log('Bulletin : ', data.bulletin[0])
+                //console.log('Récupération du bulletin réussie')
+                //console.log('Bulletin : ', data.bulletin[0])
                 setStudentBulletins(prevState => ({
                     ...prevState,
                     [userId]: data.bulletin[0],
                 }));
-                console.log('Bulletin obtenu : ', studentBulletins[userId])
+                //console.log('Bulletin obtenu : ', studentBulletins[userId])
                 //console.log('Bulletins : ', studentBulletins)
             } else
                 console.log('Erreur lors de la récupération du bulletin')
@@ -205,14 +192,12 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
             });
     };
 
-
     const updateStudentInfo = (userId, data) => {
         setFormattedStudentInfo(prevState => ({
             ...prevState,
             [userId]: data,
         }));
     };
-
 
     const openModal = () => {
         setModalIsOpen(true);
@@ -232,16 +217,89 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
         setModalIsOpen2(false);
     }
 
+    const formatDataForTraining = (bulletinData, studentInfoData) => {
+        // Formater les données pour l'entraînement du modèle
+        // Exemple simplifié :
+        //console.log('studentInfoData : ', studentInfoData.info[0].year_of_study)
+        if (studentInfoData.info[0].year_of_study === "1")
+        {
+            const formattedInput = [
+                parseFloat(bulletinData.UE1_Realiser),
+                parseFloat(bulletinData.UE2_Optimiser),
+                parseFloat(bulletinData.UE3_Administrer),
+                parseFloat(bulletinData.UE4_Gerer),
+                parseFloat(bulletinData.UE5_Conduire),
+                parseFloat(bulletinData.UE6_Collaborer),
+                parseInt(studentInfoData.info[0].year_of_study)
+            ];
+            //console.log('formattedInput size : ', formattedInput.length)
+            const inputTensor = tf.tensor2d([formattedInput]); // Créer un tenseur d'entrée
+            // Vous devez adapter la sortie en fonction de ce que vous essayez de prédire
+            const outputTensor = tf.tensor2d([[0.7]]); // Exemple de sortie
+            return {inputTensor, outputTensor};
+        }
+        else {
+            const formattedInput = [
+                parseFloat(bulletinData.UE1_Realiser),
+                parseFloat(bulletinData.UE2_Optimiser),
+                parseFloat(bulletinData.UE3_Administrer),
+                parseFloat(bulletinData.UE4_Gerer),
+                parseFloat(bulletinData.UE5_Conduire),
+                parseFloat(bulletinData.UE6_Collaborer),
+                parseInt(studentInfoData.info[0].year_of_study),
+                parseFloat(studentInfoData.info[0].stage_mark),
+            ];
+            //onsole.log('formattedInput size : ', formattedInput.length)
+            const inputTensor = tf.tensor2d([formattedInput]); // Créer un tenseur d'entrée
+            // Vous devez adapter la sortie en fonction de ce que vous essayez de prédire
+            const outputTensor = tf.tensor2d([[0.8]]); // Exemple de sortie
+            return {inputTensor, outputTensor};
+        }
+    };
+
+    const trainModel = async (formattedData) => {
+        const size = formattedData.inputTensor.shape[1];
+        //console.log('size : ', size)
+        const model = tf.sequential();
+        model.add(tf.layers.dense({units: parseInt(size), activation: 'relu', inputShape: [parseInt(size)]}));
+        model.add(tf.layers.dense({units: 1, activation: 'sigmoid'}));
+        model.compile({loss: 'meanSquaredError', optimizer: 'adam'});
+        await model.fit(formattedData.inputTensor, formattedData.outputTensor, {epochs: 100});
+        return model;
+    };
+
+    const predictInternshipChance = async (studentId) => {
+        const bulletinData = studentBulletins[studentId];
+        //console.log('Bulletin : ', bulletinData)
+        const studentInfoData = formattedStudentInfo[studentId];
+
+        const formattedData = formatDataForTraining(bulletinData, studentInfoData);
+        //console.log('formattedData : ', formattedData)
+        //console.log('size : ', formattedData.inputTensor.shape)
+        const trainedModel = await trainModel(formattedData);
+
+        const prediction = trainedModel.predict(formattedData.inputTensor);
+        return prediction.dataSync()[0]; // Retourne la valeur prédite
+    };
+
+    const getProbaStage = (studentId) => {
+        predictInternshipChance(studentId).then((prediction) => {
+            //afficher un pourcentage au dixieme pret
+            console.log('Prediction:', prediction);
+            setProbaStages(prevState => ({
+                ...prevState,
+                [studentId]: prediction,
+            }));
+        });
+    }
+
     useEffect(() => {
-        /*if (!user.studentId == null || !isConnected)
-            navigate('/');*/
         getAllStudents()
         students.forEach((student) => {
             getStudentInfo(student.student_id);
             getBulletin(student.student_id)
         });
     }, []);
-
 
     return (
         <Grid container spacing={2}>
@@ -299,7 +357,7 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                                 <td style={{padding: '10px', border: '1px solid #ccc', textAlign: 'center'}}>
                                     <img
                                         src="https://www.pngall.com/wp-content/uploads/5/Profile-Transparent.png"
-                                        alt="Image de profil"
+                                        alt="Profil"
                                         style={{width: '200px', height: '200px'}}
                                     />
                                 </td>
@@ -360,10 +418,12 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                                                         alignItems: 'center',
                                                         flexDirection: 'column'
                                                     }}>
-                                                        <table style={{borderCollapse: 'collapse',
+                                                        <table style={{
+                                                            borderCollapse: 'collapse',
                                                             border: '1px solid black',
                                                             textAlign: 'center',
-                                                            display: 'block'}}>
+                                                            display: 'block'
+                                                        }}>
                                                             <thead>
                                                             <tr>
                                                                 <th>Unité d'Enseignement</th>
@@ -405,9 +465,9 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                                                             </tbody>
                                                         </table>
                                                     </div>
-                                                    ) : (
+                                                ) : (
                                                     <p>Cet étudiant n'a pas encore de notes</p>
-                                                    )}
+                                                )}
                                                 <h3>Contact avec les entreprises :</h3>
                                                 {formattedStudentInfo[student.student_id].logs.length > 0 ? (
                                                     formattedStudentInfo[student.student_id].logs.map((log, index) => (
@@ -417,6 +477,29 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                                                     ))
                                                 ) : (
                                                     <p>Cet étudiant n'a pas encore contacté d'entreprise</p>
+                                                )}
+                                                <h3>Probabilité de stage :</h3>
+                                                {probaStages[student.student_id] ? (
+                                                    <div>
+                                                    <p>{probaStages[student.student_id] * 100}%</p>
+                                                    <Button
+                                                        onClick={() => getProbaStage(student.student_id)}
+                                                        variant="contained"
+                                                        color="primary"
+                                                        style={{margin: '5px', width: '120px', height: '50px'}}
+                                                    >
+                                                        Reprédire
+                                                    </Button>
+                                                    </div>
+                                                ) : (
+                                                    <Button
+                                                        onClick={() => getProbaStage(student.student_id)}
+                                                        variant="contained"
+                                                        color="primary"
+                                                        style={{margin: '5px', width: '160px', height: '50px'}}
+                                                    >
+                                                        Calculer la probabilité
+                                                    </Button>
                                                 )}
                                             </div>
                                         ) : (
@@ -436,8 +519,6 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                         </tbody>
                     </table>
                 </div>
-
-
             </Grid>
             <Modal
                 isOpen={modalIsOpen}
