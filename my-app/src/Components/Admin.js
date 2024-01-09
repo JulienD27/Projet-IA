@@ -219,40 +219,50 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
 
     const formatDataForTraining = (bulletinData, studentInfoData) => {
         // Formater les données pour l'entraînement du modèle
-        // Exemple simplifié :
         //console.log('studentInfoData : ', studentInfoData.info[0].year_of_study)
+        //calculer la somme des interwiews obtenu
+        let totalInterviews = 0;
+        for (const log of studentInfoData.logs) {
+            totalInterviews += parseInt(log.total_interviews);
+        }
+        console.log('totalInterviews : ', totalInterviews)
+        //nombre d'entreprises contactées
+        const totalCompanies = studentInfoData.logs.length;
+        console.log('totalCompanies : ', totalCompanies)
         if (studentInfoData.info[0].year_of_study === "1")
         {
             const formattedInput = [
-                parseFloat(bulletinData.UE1_Realiser),
-                parseFloat(bulletinData.UE2_Optimiser),
-                parseFloat(bulletinData.UE3_Administrer),
-                parseFloat(bulletinData.UE4_Gerer),
-                parseFloat(bulletinData.UE5_Conduire),
-                parseFloat(bulletinData.UE6_Collaborer),
-                parseInt(studentInfoData.info[0].year_of_study)
+                (parseFloat(bulletinData.UE1_Realiser))/20,
+                (parseFloat(bulletinData.UE2_Optimiser))/20,
+                (parseFloat(bulletinData.UE3_Administrer))/20,
+                (parseFloat(bulletinData.UE4_Gerer))/20,
+                (parseFloat(bulletinData.UE5_Conduire))/20,
+                (parseFloat(bulletinData.UE6_Collaborer))/20,
+                (parseInt(studentInfoData.info[0].year_of_study))*0.01,
+                (totalCompanies/100 + 0.1)/(totalInterviews/100 + 0.1)+1
             ];
             //console.log('formattedInput size : ', formattedInput.length)
-            const inputTensor = tf.tensor2d([formattedInput]); // Créer un tenseur d'entrée
-            // Vous devez adapter la sortie en fonction de ce que vous essayez de prédire
-            const outputTensor = tf.tensor2d([[0.7]]); // Exemple de sortie
+            const inputTensor = tf.tensor2d([formattedInput]);
+            // Adapter la sortie en fonction de ce que vous essayez de prédire
+            const outputTensor = tf.tensor2d([[0.8]]);
             return {inputTensor, outputTensor};
         }
         else {
             const formattedInput = [
-                parseFloat(bulletinData.UE1_Realiser),
-                parseFloat(bulletinData.UE2_Optimiser),
-                parseFloat(bulletinData.UE3_Administrer),
-                parseFloat(bulletinData.UE4_Gerer),
-                parseFloat(bulletinData.UE5_Conduire),
-                parseFloat(bulletinData.UE6_Collaborer),
-                parseInt(studentInfoData.info[0].year_of_study),
-                parseFloat(studentInfoData.info[0].stage_mark),
+                (parseFloat(bulletinData.UE1_Realiser))/20,
+                (parseFloat(bulletinData.UE2_Optimiser))/20,
+                (parseFloat(bulletinData.UE3_Administrer))/20,
+                (parseFloat(bulletinData.UE4_Gerer))/20,
+                (parseFloat(bulletinData.UE5_Conduire))/20,
+                (parseFloat(bulletinData.UE6_Collaborer))/20,
+                (parseInt(studentInfoData.info[0].year_of_study))*0.01,
+                (parseFloat(studentInfoData.info[0].stage_mark))/20,
+                (totalCompanies/100 + 0.1)/(totalInterviews/100 + 0.1)+1
             ];
-            //onsole.log('formattedInput size : ', formattedInput.length)
-            const inputTensor = tf.tensor2d([formattedInput]); // Créer un tenseur d'entrée
-            // Vous devez adapter la sortie en fonction de ce que vous essayez de prédire
-            const outputTensor = tf.tensor2d([[0.8]]); // Exemple de sortie
+            //console.log('formattedInput size : ', formattedInput.length)
+            const inputTensor = tf.tensor2d([formattedInput]);
+            // Adapter la sortie en fonction de ce que vous essayez de prédire
+            const outputTensor = tf.tensor2d([[0.9]]);
             return {inputTensor, outputTensor};
         }
     };
@@ -264,7 +274,7 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
         model.add(tf.layers.dense({units: parseInt(size), activation: 'relu', inputShape: [parseInt(size)]}));
         model.add(tf.layers.dense({units: 1, activation: 'sigmoid'}));
         model.compile({loss: 'meanSquaredError', optimizer: 'adam'});
-        await model.fit(formattedData.inputTensor, formattedData.outputTensor, {epochs: 100});
+        await model.fit(formattedData.inputTensor, formattedData.outputTensor, {epochs: 200});
         return model;
     };
 
@@ -272,19 +282,20 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
         const bulletinData = studentBulletins[studentId];
         //console.log('Bulletin : ', bulletinData)
         const studentInfoData = formattedStudentInfo[studentId];
-
+        console.log('StudentInfo : ', studentInfoData)
         const formattedData = formatDataForTraining(bulletinData, studentInfoData);
         //console.log('formattedData : ', formattedData)
         //console.log('size : ', formattedData.inputTensor.shape)
         const trainedModel = await trainModel(formattedData);
 
         const prediction = trainedModel.predict(formattedData.inputTensor);
-        return prediction.dataSync()[0]; // Retourne la valeur prédite
+        const squid = parseFloat(prediction.dataSync()[0]); // Retourne la valeur prédite
+        return squid.toFixed(2);
     };
 
     const getProbaStage = (studentId) => {
         predictInternshipChance(studentId).then((prediction) => {
-            //afficher un pourcentage au dixieme pret
+            //afficher un pourcentage
             console.log('Prediction:', prediction);
             setProbaStages(prevState => ({
                 ...prevState,
