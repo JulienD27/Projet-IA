@@ -165,7 +165,6 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                 console.log('Erreur de suppression' + error)
             });
         console.log('Utilisateur supprimé avec l\'ID : ', userId);
-        getAllStudents()
     };
 
     const getStudentInfo = (userId) => {
@@ -538,7 +537,7 @@ const AdminInterface = (setUser, user, isConnected, isAdmin) => {
                 style={customStyles}
                 ariaHideApp={false}
             >
-                <h2 style={{marginBottom: '20px'}}>Entrez les informations du répertoire</h2>
+                <h2 style={{marginBottom: '20px'}}>Entrez les informations de l'étudiant</h2>
                 <Card className="directory-card">
                     <CardContent>
                         <form onSubmit={addStudent}>
